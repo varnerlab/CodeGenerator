@@ -15,9 +15,8 @@ end
 function build_translation_reactions_for_protein_sequence(protein_name::String,protein_seq::String)
 
   # Load the AA symbol map -
-  path_to_mapping_file = joinpath(dirname(pathof("CodeGenerator")),"/config/AAMap.csv")
-
-  @show path_to_mapping_file
+  path_to_package = dirname(pathof(CodeGenerator))
+  path_to_mapping_file = joinpath(path_to_package,"config/AAMap.csv")
 
   map_array = readdlm(path_to_mapping_file,','); #metabolite 1, one letter 2
   protein_aa_dictionary = Dict();
