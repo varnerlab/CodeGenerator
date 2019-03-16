@@ -157,6 +157,8 @@ function parse_vff_reaction_file(path_to_reaction_file::String)
         # check do we have a comment?
         if (occursin("//",reaction_line) == false && isempty(reaction_line) == false)
 
+            println("Processing: $(reaction_line)")
+
             # spilt into fragments -
             fragment_array = split(reaction_line,",")
 
