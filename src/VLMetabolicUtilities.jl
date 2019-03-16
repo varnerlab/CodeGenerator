@@ -1,4 +1,4 @@
-function contains(string::String,token::String)
+function contains(string,token)
     return occursin(token,string)
 end
 
