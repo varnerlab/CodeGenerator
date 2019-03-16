@@ -1,3 +1,7 @@
+function contains(string::String,token::String)
+    return occursin(token,string)
+end
+
 function build_flux_bounds_array(reaction_array::Array{VLReaction,1})
 end
 
@@ -157,6 +161,7 @@ function parse_vff_reaction_file(path_to_reaction_file::String)
         # check do we have a comment?
         if (occursin("//",reaction_line) == false && isempty(reaction_line) == false)
 
+            # let the user know ...
             println("Processing: $(reaction_line)")
 
             # spilt into fragments -
