@@ -142,7 +142,6 @@ function build_symbol_array(reaction_array::Array{VLReaction,1})
   return species_symbol_array
 end
 
-
 # Function to load VFF reactions from file -
 function parse_vff_reaction_file(path_to_reaction_file::String)
 
@@ -184,4 +183,22 @@ function parse_vff_reaction_file(path_to_reaction_file::String)
 
   # return my reaction array to caller -
   return reaction_array
+end
+
+function build_stoichiometric_matrix_from_vff_file(path_to_reaction_file::String)
+
+    # TODO - is the reaction file path legit?
+    if (isempty(path_to_reaction_file) == true || length(path_to_reaction_file) == 1)
+        error_message = "ERROR: Path to reaction file is empty"
+        throw(error(error_message))
+    end
+
+    # get reaction array -
+    reaction_array = parse_vff_reaction_file(path_to_reaction_file)
+
+    # get the species list -
+    symbol_array = build_symbol_array(reaction_array)
+
+    # build the stoichiometric_matrix -
+    return build_stoichiometric_matrix(symbol_array, reaction_array)
 end
