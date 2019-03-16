@@ -178,7 +178,7 @@ function parse_vff_reaction_file(path_to_reaction_file::String)
     close(file)
 
   catch error
-    showerror(STDOUT, error, backtrace()); println()
+    showerror(stdout, error, backtrace()); println()
   end
 
   # return my reaction array to caller -
