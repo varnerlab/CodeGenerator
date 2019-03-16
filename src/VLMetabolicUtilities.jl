@@ -154,24 +154,27 @@ function parse_vff_reaction_file(path_to_reaction_file::String)
     file = open(path_to_reaction_file)
     for reaction_line in eachline(file)
 
-      # spilt into fragments -
-      fragment_array = split(reaction_line,",")
+        # check do we have a comment?
+        if (occursin("//",reaction_line) == false)
+            # spilt into fragments -
+            fragment_array = split(reaction_line,",")
 
-      # Grab the fields -
-      local_name = fragment_array[1]
-      left_phrase = fragment_array[3]
-      right_phrase = fragment_array[4]
-      reverse_flag = fragment_array[5]
-      forward_flag = fragment_array[6]
+            # Grab the fields -
+            local_name = fragment_array[1]
+            left_phrase = fragment_array[3]
+            right_phrase = fragment_array[4]
+            reverse_flag = fragment_array[5]
+            forward_flag = fragment_array[6]
 
-      # Make a new reaction type, store in array -
-      reaction_wrapper = VLReaction()
-      reaction_wrapper.reaction_name = local_name
-      reaction_wrapper.left_phrase = left_phrase
-      reaction_wrapper.right_phrase = right_phrase
-      reaction_wrapper.reverse = reverse_flag
-      reaction_wrapper.forward = chop(chomp(forward_flag))
-      push!(reaction_array,reaction_wrapper)
+            # Make a new reaction type, store in array -
+            reaction_wrapper = VLReaction()
+            reaction_wrapper.reaction_name = local_name
+            reaction_wrapper.left_phrase = left_phrase
+            reaction_wrapper.right_phrase = right_phrase
+            reaction_wrapper.reverse = reverse_flag
+            reaction_wrapper.forward = chop(chomp(forward_flag))
+            push!(reaction_array,reaction_wrapper)
+        end
     end
 
     # Make sure to close the file!
