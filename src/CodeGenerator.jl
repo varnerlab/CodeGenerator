@@ -11,8 +11,9 @@ export build_stoichiometric_matrix_from_vff_file
 export build_reaction_bounds_matrix_from_vff_file
 export write_debug_report
 export generate_net_reaction_string
-
 export parse_vff_reaction_string
 
+# export types -
+export VLReaction
 
 end # module
