@@ -3,6 +3,27 @@ function contains(string,token)
 end
 
 function build_flux_bounds_array(reaction_array::Array{VLReaction,1})
+
+    # dimensions -
+    number_of_reactions = length(reaction_array)
+
+    # initialize -
+    default_bounds_array = zeros(number_of_reactions,2)
+
+    # build the flux bounds array -
+    for reaction_index = 1:number_of_reactions
+
+        # get bounds strings -
+        lower_bound_string = reaction_array[reaction_index].reverse
+        upper_bound_string = reaction_array[reaction_index].forward
+
+        # build -
+        default_bounds_array[reaction_index,1] = parse(Float64,lower_bound_string)
+        default_bounds_array[reaction_index,2] = parse(Float64,upper_bound_string)
+    end
+
+    # return -
+    return default_bounds_array
 end
 
 # Function to build the stoichiometric_matrix from reaction list -
@@ -25,7 +46,7 @@ function build_stoichiometric_matrix(species_symbol_array::Array{VLSpeciesSymbol
           test_lexeme = local_fragment_array[2];
 
           if (lexeme == test_lexeme)
-            coefficient = float(local_fragment_array[1]);
+            coefficient = parse(Float64,local_fragment_array[1]);
             break
           end
 
@@ -142,8 +163,70 @@ function build_symbol_array(reaction_array::Array{VLReaction,1})
     end
   end
 
+  # ok, so the species symbol array is *not* sorted)
+  # let's sort the species -
+  tmp_array = String[]
+  for species_symbol::VLSpeciesSymbol in species_symbol_array
+      push!(tmp_array,species_symbol.lexeme)
+  end
+
+  # generate permutation array -
+  idxa_sorted = sortperm(tmp_array)
+  sorted_symbol_array = species_symbol_array[idxa_sorted]
+
+  # ok, if a species contains [], then put it at the end -
+  partitioned_symbol_array = VLSpeciesSymbol[]
+  external_symbol_array = VLSpeciesSymbol[]
+  for species_symbol::VLSpeciesSymbol in sorted_symbol_array
+
+      if (occursin(r"\[*\]",species_symbol.lexeme) == false)
+          push!(partitioned_symbol_array, species_symbol)
+      else
+          push!(external_symbol_array,species_symbol)
+      end
+  end
+
+  # add tmp's back to the bottom -
+  for species_symbol in external_symbol_array
+      push!(partitioned_symbol_array, species_symbol)
+  end
+
   # return -
-  return species_symbol_array
+  return partitioned_symbol_array
+end
+
+
+# function to parse a specific vff reaction -
+function parse_vff_reaction_string(reaction_string::String, reversible::Bool; delimiter::String=",")::VLReaction
+
+    # initialize -
+    reaction_wrapper = VLReaction()
+
+    # spilt into fragments -
+    fragment_array = split(reaction_string,delimiter)
+
+    # Grab the fields -
+    local_name = fragment_array[1]
+    left_phrase = fragment_array[2]
+    right_phrase = fragment_array[3]
+
+    # add stuff to the reaction warpper -
+    reaction_wrapper.reaction = reaction_string
+    reaction_wrapper.reaction_name = local_name
+    reaction_wrapper.left_phrase = left_phrase
+    reaction_wrapper.right_phrase = right_phrase
+
+    # handle reversible -
+    if reversible == true
+        reaction_wrapper.reverse = "-inf"
+        reaction_wrapper.forward = "inf"
+    else
+        reaction_wrapper.reverse = "0.0"
+        reaction_wrapper.forward = "inf"
+    end
+
+    # return -
+    return reaction_wrapper
 end
 
 # Function to load VFF reactions from file -
@@ -176,11 +259,12 @@ function parse_vff_reaction_file(path_to_reaction_file::String)
 
             # Make a new reaction type, store in array -
             reaction_wrapper = VLReaction()
+            reaction_wrapper.reaction = reaction_line
             reaction_wrapper.reaction_name = local_name
             reaction_wrapper.left_phrase = left_phrase
             reaction_wrapper.right_phrase = right_phrase
             reaction_wrapper.reverse = reverse_flag
-            reaction_wrapper.forward = chop(chomp(forward_flag))
+            reaction_wrapper.forward = forward_flag
             push!(reaction_array,reaction_wrapper)
         end
     end
@@ -196,6 +280,76 @@ function parse_vff_reaction_file(path_to_reaction_file::String)
   return reaction_array
 end
 
+function generate_net_reaction_string(uptake_array::Array{Float64,1},epsilon::Float64,data_dictionary::Dict{AbstractString,Any})
+
+  # get list of metabolite symbols -
+  list_of_metabolite_symbols = data_dictionary["list_of_metabolite_symbols"]
+
+  # check for smalls -
+  idx_small = find(abs(uptake_array).<epsilon)
+  uptake_array[idx_small] = 0.0
+
+  # which elememts are positive (products)?
+  idx_product_array = find(uptake_array.>0)
+
+  # which elements are negative (reactants?)
+  idx_reactant_array = find(uptake_array.<0)
+
+  # build the string ...
+  net_reaction_buffer = ""
+  for idx_reactant in idx_reactant_array
+
+    metabolite_symbol = list_of_metabolite_symbols[idx_reactant]
+    st_coeff = round(abs(uptake_array[idx_reactant]),2)
+
+    if (st_coeff != 1.0)
+      net_reaction_buffer *= "$(st_coeff)*$(metabolite_symbol) + "
+    else
+      net_reaction_buffer *= "$(metabolite_symbol) + "
+    end
+  end
+
+  # cutoff trailing * -
+  net_reaction_buffer = net_reaction_buffer[1:end-3]
+
+  # add the arrow -
+  net_reaction_buffer *= " --> "
+
+  # write the trailing stuff -
+  for idx_product in idx_product_array
+
+    metabolite_symbol = list_of_metabolite_symbols[idx_product]
+    st_coeff = round(abs(uptake_array[idx_product]),2)
+
+    if (st_coeff != 1.0)
+      net_reaction_buffer *= "$(st_coeff)*$(metabolite_symbol) + "
+    else
+      net_reaction_buffer *= "$(metabolite_symbol) + "
+    end
+  end
+
+  # cutoff trailing * -
+  net_reaction_buffer = net_reaction_buffer[1:end-3]
+
+  # return -
+  return net_reaction_buffer
+end
+
+function build_reaction_bounds_matrix_from_vff_file(path_to_reaction_file::String)
+
+    # TODO - is the reaction file path legit?
+    if (isempty(path_to_reaction_file) == true || length(path_to_reaction_file) == 1)
+        error_message = "ERROR: Path to reaction file is empty"
+        throw(error(error_message))
+    end
+
+    # get reaction array -
+    reaction_array = parse_vff_reaction_file(path_to_reaction_file)
+
+    # build the flux bounds -
+    return build_flux_bounds_array(reaction_array)
+end
+
 function build_stoichiometric_matrix_from_vff_file(path_to_reaction_file::String)
 
     # TODO - is the reaction file path legit?
@@ -208,8 +362,8 @@ function build_stoichiometric_matrix_from_vff_file(path_to_reaction_file::String
     reaction_array = parse_vff_reaction_file(path_to_reaction_file)
 
     # get the species list -
-    symbol_array = build_symbol_array(reaction_array)
+    sorted_symbol_array = build_symbol_array(reaction_array)
 
     # build the stoichiometric_matrix -
-    return build_stoichiometric_matrix(symbol_array, reaction_array)
+    return build_stoichiometric_matrix(sorted_symbol_array, reaction_array)
 end

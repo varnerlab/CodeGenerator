@@ -44,9 +44,9 @@ uuid = "8bf52ea8-c179-5cab-976a-9e18b702a9bc"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "49269e311ffe11ac5b334681d212329002a9832a"
+git-tree-sha1 = "195a3ffcb8b0762684b6821de18f83a16455c6ea"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "1.5.1"
+version = "2.0.0"
 
 [[Dates]]
 deps = ["Printf"]
@@ -125,7 +125,7 @@ git-tree-sha1 = "bb06f887187ca916c171340de28b93f598e2be59"
 repo-rev = "v0.7-update"
 repo-url = "https://github.com/halleysfifthinc/MAT.jl"
 uuid = "23992714-dd62-5051-b70f-ba57cb901cac"
-version = "0.4.0+"
+version = "0.5.0+"
 
 [[Markdown]]
 deps = ["Base64"]
